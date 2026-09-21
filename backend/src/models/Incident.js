@@ -1,1 +1,0 @@
-// TODO: Schema Incidente (location[Point], type, severity, status, reportsCount)

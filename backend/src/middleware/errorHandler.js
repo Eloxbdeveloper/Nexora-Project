@@ -1,1 +1,0 @@
-// TODO: Manejo errores centralizado

@@ -1,1 +1,0 @@
-// TODO: Schema Reporte (user, incident, type, location[Point], description, severity, status)
