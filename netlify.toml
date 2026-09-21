@@ -1,4 +1,2 @@
-
 [build]
- 
-  publish = "frontend/public/index.html"
+  publish = "frontend/public"
