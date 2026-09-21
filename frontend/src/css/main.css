@@ -4,3 +4,160 @@ body { font-family: system-ui, sans-serif; background: var(--color-bg); color: v
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 .hidden { display: none !important; }
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: sans-serif;
+  background-color: #f4f6f8;
+}
+
+main.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr 60px; /* 90% aprox para el contenido y 60px fijos para botones */
+}
+
+/* Paneles (Mapa y Reportes) */
+.tab-panel {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.tab-panel.active {
+  display: block; /* Muestra el panel activo */
+}
+
+.map_render {
+  width: 100%;
+  height: 100%;
+}
+
+#reports {
+  padding: 1rem;
+  overflow-y: auto;
+  background-color: #ffffff;
+}
+
+/* Barra de Botones Inferior */
+.buttons_sections {
+  width: 100vw;
+  height: 60px;
+  background-color: #ffffff;
+  display: flex;
+  border-top: 1px solid #e0e0e0;
+  z-index: 1000;
+}
+
+.buttons_sections button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Estado activo de los botones */
+.buttons_sections button.active-btn {
+  color: #007bff;
+  background-color: #f8f9fa;
+  border-top: 3px solid #007bff;
+}
+
+/* ==========================================
+   ESTILOS DE LA SECCIÓN DE REPORTES
+   ================================---------- */
+#reports.tab-panel {
+  display: none; /* Se mantiene oculto por defecto */
+  flex-direction: column;
+  width: 100vw;
+  height: 100%;
+  background-color: #f8f9fa;
+}
+
+#reports.tab-panel.active {
+  display: flex; /* Se muestra como columna cuando está activo */
+}
+
+/* 1. Bloque Superior de Controles (~30% de la altura disponible) */
+.reports-header-container {
+  flex: 0 0 30%;
+  min-height: 160px; /* Asegura espacio suficiente en pantallas pequeñas */
+  padding: 1rem;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* Fila para los dos selects */
+.filters-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.report-select {
+  flex: 1;
+  padding: 0.6rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+}
+
+.report-select:focus {
+  border-color: #007bff;
+}
+
+/* Botón de ancho completo */
+.btn-full-width {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center;
+}
+
+.btn-full-width:active {
+  background-color: #0056b3;
+}
+
+/* 2. Bloque Inferior: Contenedor de la lista de reportes (Resto del alto) */
+.reports-list-container {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto; /* Permite hacer scroll verticalmente por los reportes */
+  background-color: #f4f6f8;
+}
+
+/* Ejemplo visual temporal para las tarjetas que cargues luego */
+.report-card-placeholder {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
