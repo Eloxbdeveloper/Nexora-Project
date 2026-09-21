@@ -1,0 +1,6 @@
+/* Reset + base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: var(--color-bg); color: var(--color-text); line-height: 1.5; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.hidden { display: none !important; }

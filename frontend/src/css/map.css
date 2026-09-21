@@ -1,0 +1,4 @@
+/* Estilos mapa Leaflet */
+#map { height: 100vh; width: 100%; }
+.leaflet-popup-content-wrapper { border-radius: var(--radius-md); }
+.leaflet-popup-content { margin: var(--spacing-sm); }

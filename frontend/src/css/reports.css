@@ -1,0 +1,12 @@
+/* Estilos lista/tarjetas reportes */
+.reports-list { padding: var(--spacing-md); display: grid; gap: var(--spacing-md); }
+.report-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--spacing-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--color-primary); }
+.report-card.severity-alta { border-left-color: var(--color-danger); }
+.report-card.severity-media { border-left-color: var(--color-warning); }
+.report-card.severity-baja { border-left-color: var(--color-success); }
+.report-card__header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-xs); }
+.report-card__type { font-weight: 600; text-transform: capitalize; }
+.report-card__severity { font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: var(--radius-sm); text-transform: uppercase; }
+.report-card__location { color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: var(--spacing-xs); }
+.report-card__description { margin-bottom: var(--spacing-xs); }
+.report-card__meta { display: flex; gap: var(--spacing-md); font-size: 0.75rem; color: var(--color-text-muted); }
