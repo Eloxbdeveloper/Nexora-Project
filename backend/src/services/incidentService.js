@@ -1,0 +1,1 @@
+// TODO: CRUD incidentes + agregación reportes cercanos
