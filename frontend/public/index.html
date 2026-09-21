@@ -9,11 +9,75 @@
 </head>
 <body>
   <header id="header"></header>
-  <main>
-    <div id="map" class="tab-panel active"></div>
-    <div id="reports" class="tab-panel"></div>
+  <div id="modal" class="hidden"></div>
+  
+  
+  <main class="app-container">
+    <!-- Panel del Mapa (Ocupa el espacio superior) -->
+    <div id="map" class="tab-panel active">
+      <div class="map_render"></div>
+    </div>
+
+    <!-- Panel de Reportes (Ocupa el espacio superior cuando está activo) -->
+    <div id="reports" class="tab-panel">
+      <!-- Bloque superior de filtros y creación (~30% de altura) -->
+      <div class="reports-header-container">
+        <div class="filters-row">
+          <select id="filter-locality" class="report-select">
+            <option value="">Todas las Localidades</option>
+            <option value="usaquen">Usaquén</option>
+            <option value="chapinero">Chapinero</option>
+            <option value="santa-fe">Santa Fe</option>
+            <option value="san-cristobal">San Cristóbal</option>
+            <option value="usme">Usme</option>
+            <option value="tunjuelito">Tunjuelito</option>
+            <option value="bosa">Bosa</option>
+            <option value="kennedy">Kennedy</option>
+            <option value="fontibon">Fontibón</option>
+            <option value="engativa">Engativá</option>
+            <option value="suba">Suba</option>
+            <option value="barrios-unidos">Barrios Unidos</option>
+            <option value="teusaquillo">Teusaquillo</option>
+            <option value="los-martires">Los Mártires</option>
+            <option value="antonio-narino">Antonio Nariño</option>
+            <option value="puente-aranda">Puente Aranda</option>
+            <option value="la-candelaria">La Candelaria</option>
+            <option value="rafael-uribe">Rafael Uribe Uribe</option>
+            <option value="ciudad-bolivar">Ciudad Bolívar</option>
+            <option value="sumapaz">Sumapaz</option>
+          </select>
+
+          <select id="filter-type" class="report-select">
+            <option value="">Todos los Tipos</option>
+            <option value="accidente">Accidente</option>
+            <option value="bloqueo">Bloqueo</option>
+            <option value="congestion">Congestión / Trancón</option>
+            <option value="retraso">Retrasos</option>
+            <option value="estacion">Problemas en estación</option>
+            <option value="infraestructura">Daños en infraestructura</option>
+            <option value="obras">Obras</option>
+          </select>
+        </div>
+
+        <!-- Botón de ancho completo para crear reporte -->
+        <button id="btn-open-modal" class="btn-full-width">Crear Nuevo Reporte</button>
+      </div>
+
+      <!-- Bloque inferior: Espacio para ver los reportes (con scroll) -->
+      <div class="reports-list-container">
+        
+  
+      </div>
+    </div>
+
+    <!-- Botones fijos en el 10% inferior de la pantalla -->
+    <nav class="buttons_sections">
+      <button class="map active-btn">Mapa</button>
+      <button class="reports">Reportes</button>
+    </nav>
   </main>
-  <div id="modal" class="modal hidden"></div>
+
+  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="../src/js/app.js"></script>
 </body>
