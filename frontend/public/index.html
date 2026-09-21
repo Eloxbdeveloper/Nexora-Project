@@ -9,6 +9,8 @@
 </head>
 <body>
   <header id="header"></header>
+  <div id="modal" class="hidden"></div>
+  
   
   <main class="app-container">
     <!-- Panel del Mapa (Ocupa el espacio superior) -->
@@ -63,10 +65,8 @@
 
       <!-- Bloque inferior: Espacio para ver los reportes (con scroll) -->
       <div class="reports-list-container">
-        <!-- Aquí se inyectarán las tarjetas de reportes desde JS -->
-        <div class="report-card-placeholder">
-          <p>Cargando incidentes de movilidad...</p>
-        </div>
+        
+  
       </div>
     </div>
 
@@ -77,7 +77,7 @@
     </nav>
   </main>
 
-  <div id="modal" class="modal hidden"></div>
+  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="../src/js/app.js"></script>
 </body>
