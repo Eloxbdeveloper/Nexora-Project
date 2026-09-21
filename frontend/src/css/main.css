@@ -79,6 +79,8 @@ main.app-container {
    ========================================== */
 #reports.tab-panel {
   background-color: #f8f9fa;
+  height: 100%;       /* Asegura que ocupe todo el alto del contenedor principal */
+  min-height: 0;      /* Vital en flexbox para permitir que los hijos calculen bien el scroll */
 }
 
 .reports-header-container {
@@ -136,8 +138,9 @@ main.app-container {
    ========================================== */
 .reports-list-container {
   flex: 1;
+  min-height: 0;      /* Permite que el contenedor colapse y active el scroll correctamente */
   padding: 1rem;
-  overflow-y: auto;
+  overflow-y: auto;   /* Cambiado de 'scroll' a 'auto' para que solo aparezca cuando sea necesario */
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -389,4 +392,53 @@ main.app-container {
   text-align: center;
   margin-top: 0.5rem;
 }
+/* ==========================================
+   6. ESTILOS ADICIONALES PARA EL FORMULARIO DE MODAL
+   ========================================== */
+
+.modal-body form .report-select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-body form .report-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.modal-body form .modal-info-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.modal-body form .modal-info-row .modal-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+}
+
+.modal-body form textarea.report-select {
+  resize: none;
+  width: 100% !important;
+  max-width: 100%;
+  min-height: 80px;
+  height: 90px;
+}
+
+
+
+
+
+
 
