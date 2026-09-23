@@ -45,6 +45,10 @@ __decorate([
     __metadata("design:type", GeoLocation)
 ], Incident.prototype, "location", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({ type: String, trim: true, default: '' }),
+    __metadata("design:type", String)
+], Incident.prototype, "zone", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ type: String, enum: exports.TIPOS_INCIDENTE, required: true }),
     __metadata("design:type", String)
 ], Incident.prototype, "type", void 0);

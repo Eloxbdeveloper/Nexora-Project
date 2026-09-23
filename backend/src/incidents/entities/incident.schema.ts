@@ -38,6 +38,11 @@ export class Incident {
   @Prop({ type: GeoLocation, required: true })
   location: GeoLocation;
 
+  // Nombre legible de la zona/localidad (ej. "Suba", "Chapinero").
+  // No usamos geocodificación externa en el MVP; se guarda directamente.
+  @Prop({ type: String, trim: true, default: '' })
+  zone: string;
+
   @Prop({ type: String, enum: TIPOS_INCIDENTE, required: true })
   type: IncidentType;
 

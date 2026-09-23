@@ -12,6 +12,7 @@ declare class GeoLocation {
 }
 export declare class Incident {
     location: GeoLocation;
+    zone: string;
     type: IncidentType;
     description: string;
     severity: Severity;
