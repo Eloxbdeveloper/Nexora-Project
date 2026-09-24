@@ -1,9 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, isValidObjectId } from 'mongoose';
-import { Incident, IncidentDocument } from '../entities/incident.schema';
+import { Incident, IncidentDocument, Severity } from '../entities/incident.schema';
 import { QueryIncidentsDto } from '../dto/query-incidents.dto';
 
+// Radio en metros para considerar que un nuevo reporte pertenece
+// a un incidente ya existente en vez de crear uno nuevo.
+const GROUPING_RADIUS_METERS = 100;
+
+const SEVERITY_RANK: Record<Severity, number> = {
+  baja: 1,
+  media: 2,
+  alta: 3,
+};
 @Injectable()
 export class IncidentsService {
   constructor(
@@ -12,46 +21,42 @@ export class IncidentsService {
   ) {}
 
   async findAll(query: QueryIncidentsDto) {
-    const { page, limit, type, status, severity } = query;
+    const { page = 1, limit = 20, type, status, severity, search, sort } = query;
 
     const filter: FilterQuery<IncidentDocument> = {};
     if (type) filter.type = type;
     if (status) filter.status = status;
     if (severity) filter.severity = severity;
+    if (search) filter.$text = { $search: search };
 
-    if (!page && !limit) {
-      const incidents = await this.incidentModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .exec();
+    const sortOption: Record<string, 1 | -1> =
+      sort === 'createdAt' ? { createdAt: 1 } : { createdAt: -1 };
 
-      return {
-        success: true,
-        count: incidents.length,
-        data: incidents,
-      };
-    }
+    const skip = (page - 1) * limit;
 
-    const pageNum = page ?? 1;
-    const limitNum = limit ?? 20;
-    const skip = (pageNum - 1) * limitNum;
-
-    const [incidents, total] = await Promise.all([
-      this.incidentModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .exec(),
+    const [incidents, total, counts] = await Promise.all([
+      this.incidentModel.find(filter).sort(sortOption).skip(skip).limit(limit).exec(),
       this.incidentModel.countDocuments(filter).exec(),
+      this.incidentModel.aggregate([
+        { $match: filter },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
     ]);
+
+    const summary = { total, activos: 0, solucionados: 0, en_revision: 0 };
+    for (const c of counts) {
+      if (c._id === 'activo') summary.activos = c.count;
+      if (c._id === 'solucionado') summary.solucionados = c.count;
+      if (c._id === 'en_revision') summary.en_revision = c.count;
+    }
 
     return {
       success: true,
       count: incidents.length,
       total,
-      page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
+      page,
+      totalPages: Math.ceil(total / limit),
+      summary,
       data: incidents,
     };
   }
@@ -68,5 +73,45 @@ export class IncidentsService {
     }
 
     return { success: true, data: incident };
+  }
+
+  async findOrCreateFromReport(params: {
+    location: { type: 'Point'; coordinates: number[] };
+    type: string;
+    description: string;
+    severity: string;
+  }) {
+    const { location, type, description, severity } = params;
+
+    const nearby = await this.incidentModel.findOne({
+      location: {
+        $near: {
+          $geometry: location,
+          $maxDistance: GROUPING_RADIUS_METERS,
+        },
+      },
+    });
+
+    if (nearby) {
+      nearby.reportsCount += 1;
+
+      if (SEVERITY_RANK[severity as Severity] > SEVERITY_RANK[nearby.severity]) {
+        nearby.severity = severity as Severity;
+      }
+
+      await nearby.save();
+      return { incident: nearby, isNew: false };
+    }
+
+    const created = await this.incidentModel.create({
+      location,
+      type,
+      description,
+      severity,
+      status: 'activo',
+      reportsCount: 1,
+    });
+
+    return { incident: created, isNew: true };
   }
 }

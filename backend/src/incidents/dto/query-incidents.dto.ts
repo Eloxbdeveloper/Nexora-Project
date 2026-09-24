@@ -1,30 +1,26 @@
-import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ESTADOS, GRAVEDADES, TIPOS_INCIDENTE } from '../entities/incident.schema';
 
 export class QueryIncidentsDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   page?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
   limit?: number;
 
-  @IsOptional()
-  @IsIn(TIPOS_INCIDENTE)
+  @IsOptional() @IsIn(TIPOS_INCIDENTE)
   type?: string;
 
-  @IsOptional()
-  @IsIn(ESTADOS)
+  @IsOptional() @IsIn(ESTADOS)
   status?: string;
 
-  @IsOptional()
-  @IsIn(GRAVEDADES)
+  @IsOptional() @IsIn(GRAVEDADES)
   severity?: string;
+
+  @IsOptional() @IsString()
+  search?: string;
+
+  @IsOptional() @IsIn(['createdAt', '-createdAt'])
+  sort?: string;
 }

@@ -4,4 +4,6 @@ export declare class QueryIncidentsDto {
     type?: string;
     status?: string;
     severity?: string;
+    search?: string;
+    sort?: string;
 }

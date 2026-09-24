@@ -46,4 +46,14 @@ __decorate([
     (0, class_validator_1.IsIn)(incident_schema_1.GRAVEDADES),
     __metadata("design:type", String)
 ], QueryIncidentsDto.prototype, "severity", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], QueryIncidentsDto.prototype, "search", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['createdAt', '-createdAt']),
+    __metadata("design:type", String)
+], QueryIncidentsDto.prototype, "sort", void 0);
 //# sourceMappingURL=query-incidents.dto.js.map

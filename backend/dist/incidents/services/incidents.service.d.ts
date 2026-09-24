@@ -7,20 +7,15 @@ export declare class IncidentsService {
     findAll(query: QueryIncidentsDto): Promise<{
         success: boolean;
         count: number;
-        data: (import("mongoose").Document<unknown, {}, IncidentDocument, {}, {}> & Incident & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
-        total?: undefined;
-        page?: undefined;
-        totalPages?: undefined;
-    } | {
-        success: boolean;
-        count: number;
         total: number;
         page: number;
         totalPages: number;
+        summary: {
+            total: number;
+            activos: number;
+            solucionados: number;
+            en_revision: number;
+        };
         data: (import("mongoose").Document<unknown, {}, IncidentDocument, {}, {}> & Incident & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
@@ -34,5 +29,21 @@ export declare class IncidentsService {
         }> & {
             __v: number;
         };
+    }>;
+    findOrCreateFromReport(params: {
+        location: {
+            type: 'Point';
+            coordinates: number[];
+        };
+        type: string;
+        description: string;
+        severity: string;
+    }): Promise<{
+        incident: import("mongoose").Document<unknown, {}, IncidentDocument, {}, {}> & Incident & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+            _id: import("mongoose").Types.ObjectId;
+        }> & {
+            __v: number;
+        };
+        isNew: boolean;
     }>;
 }

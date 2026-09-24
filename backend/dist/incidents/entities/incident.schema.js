@@ -73,4 +73,7 @@ exports.Incident = Incident = __decorate([
 ], Incident);
 exports.IncidentSchema = mongoose_1.SchemaFactory.createForClass(Incident);
 exports.IncidentSchema.index({ location: '2dsphere' });
+exports.IncidentSchema.index({ zone: 'text', type: 'text', description: 'text' });
+exports.IncidentSchema.index({ status: 1, createdAt: -1 });
+exports.IncidentSchema.index({ severity: 1, createdAt: -1 });
 //# sourceMappingURL=incident.schema.js.map

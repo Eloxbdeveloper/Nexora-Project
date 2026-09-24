@@ -6,20 +6,15 @@ export declare class IncidentsController {
     findAll(query: QueryIncidentsDto): Promise<{
         success: boolean;
         count: number;
-        data: (import("mongoose").Document<unknown, {}, import("../entities/incident.schema").IncidentDocument, {}, {}> & import("../entities/incident.schema").Incident & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
-        total?: undefined;
-        page?: undefined;
-        totalPages?: undefined;
-    } | {
-        success: boolean;
-        count: number;
         total: number;
         page: number;
         totalPages: number;
+        summary: {
+            total: number;
+            activos: number;
+            solucionados: number;
+            en_revision: number;
+        };
         data: (import("mongoose").Document<unknown, {}, import("../entities/incident.schema").IncidentDocument, {}, {}> & import("../entities/incident.schema").Incident & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {

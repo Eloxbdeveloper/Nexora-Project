@@ -63,3 +63,9 @@ export const IncidentSchema = SchemaFactory.createForClass(Incident);
 
 // Índice geoespacial requerido para consultas espaciales (near, within, etc.)
 IncidentSchema.index({ location: '2dsphere' });
+// Búsqueda de texto libre (HU-04: "search" por zona, tipo, descripción)
+IncidentSchema.index({ zone: 'text', type: 'text', description: 'text' });
+
+// Filtros frecuentes combinados con orden por fecha
+IncidentSchema.index({ status: 1, createdAt: -1 });
+IncidentSchema.index({ severity: 1, createdAt: -1 });
