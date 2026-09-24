@@ -6,3 +6,4 @@ opencode.json
 .DS_Store
 frontend/dist/
 backend/data/*.json
+docs/.obsidian/
