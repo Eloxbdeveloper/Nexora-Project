@@ -75,8 +75,29 @@ main.app-container {
 }
 
 /* ==========================================
-   3. SECCIÓN DE REPORTES Y FILTROS
+   3. SECCIÓN DE REPORTES, MAPA Y FILTROS (MOBILE-FRIENDLY)
    ========================================== */
+#map.tab-panel {
+  position: relative;
+}
+
+/* Contenedor de filtros superiores del mapa adaptado para móviles */
+.map-filters-container {
+  padding: 8px !important;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 1000;
+  position: relative;
+}
+
+.map-filters-container .report-select {
+  flex: 1 1 calc(50% - 6px); /* En móviles se acomodan de a 2 por línea si falta espacio */
+  min-width: 130px;
+}
+
 #reports.tab-panel {
   background-color: #f8f9fa;
   height: 100%;       /* Asegura que ocupe todo el alto del contenedor principal */
@@ -85,28 +106,30 @@ main.app-container {
 
 .reports-header-container {
   flex: 0 0 auto;
-  padding: 1rem;
+  padding: 0.75rem;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .filters-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 6px;
   width: 100%;
+  flex-wrap: wrap; /* Permite que los 3 selects bajen ordenadamente en pantallas pequeñas */
 }
 
 .report-select {
-  flex: 1;
-  padding: 0.6rem;
+  flex: 1 1 calc(50% - 6px); /* Se adaptan fluidamente en móviles */
+  min-width: 130px;
+  padding: 0.55rem;
   border: 1px solid #ced4da;
   border-radius: 8px;
   background-color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #333;
   outline: none;
 }
@@ -117,12 +140,12 @@ main.app-container {
 
 .btn-full-width {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.65rem;
   background-color: #007bff;
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -131,6 +154,15 @@ main.app-container {
 
 .btn-full-width:active {
   background-color: #0056b3;
+}
+
+/* Ajuste responsivo para pantallas un poco más anchas (como tablets o desktop) */
+@media (min-width: 768px) {
+  .map-filters-container .report-select,
+  .filters-row .report-select {
+    flex: 1;
+    min-width: 140px;
+  }
 }
 
 /* ==========================================
@@ -435,10 +467,5 @@ main.app-container {
   min-height: 80px;
   height: 90px;
 }
-
-
-
-
-
 
 
