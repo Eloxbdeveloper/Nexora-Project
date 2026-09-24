@@ -6,10 +6,24 @@ import { initTabs } from './components/Tabs.js';
 import './components/Modal.js'; 
 import { initMap } from './map/map.js';
 
+// Importar las 3 bases de datos de escenarios
+import { mockReportsHourPeak } from './reports/list.js'; // O ajusta la ruta si las tienes en otro archivo
+import { mockReportsRain } from './reports/list.js';
+import { mockReportsClearDay } from './reports/list.js';
+
+// NOTA: Si las tienes exportadas en un mismo archivo, impórtalas así:
+// import { mockReportsHourPeak, mockReportsRain, mockReportsClearDay } from './reports/list.js';
+
 // Coordenadas centrales de Bogotá y zoom general
 const BOGOTA_LAT = 4.6097;
 const BOGOTA_LNG = -74.0817;
 const INITIAL_ZOOM = 11;
+
+let mapInstance = null;
+let markersLayer = null; // Capa para agrupar y limpiar marcadores fácilmente
+
+// Estado global para la base de datos activa (Por defecto: Hora Pico)
+let currentReports = mockReportsHourPeak;
 
 const mapContainer = document.querySelector('.map_render');
 
@@ -21,14 +35,44 @@ if (mapContainer) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
+  markersLayer = L.layerGroup().addTo(map);
+  mapInstance = map;
   window.appMap = map;
 }
 
 initTabs();
 
 // ==========================================
-// FUNCIONES AUXILIARES
+// FUNCIONES AUXILIARES Y COLORES POR LOCALIDAD
 // ==========================================
+const localityColors = {
+  'usaquén': '#e11d48',        // Rojo intenso
+  'chapinero': '#7c3aed',       // Morado oscuro
+  'santa fe': '#c702ba',        // Azul cobalto
+  'san cristóbal': '#208c5dca', // Verde esmeralda oscuro
+  'usme': '#d97706',            // Ámbar / Naranja oscuro
+  'tunjuelito': '#d975a2',      // Rosa oscuro / Magenta
+  'bosa': '#4f46e5',            // Índigo fuerte
+  'kennedy': '#16a34a',         // Verde brillante
+  'fontibón': '#9e86dc',        // Cian oscuro
+  'engativá': '#9333ea',        // Púrpura vivo
+  'suba': '#ea580c',            // Naranja rojizo
+  'barrios unidos': '#2563eb',  // Azul rey
+  'teusaquillo': '#65a30d',     // Verde oliva / Lima oscuro
+  'los mártires': '#c026d3',    // Fucsia intenso
+  'antonio nariño': '#b0b60c',  // Turquesa oscuro / Teal
+  'puente aranda': '#eac26b',   // Dorado / Amarillo oscuro
+  'la candelaria': '#410e0e',   // Gris pizarra oscuro
+  'rafael uribe uribe': '#eab308', // Amarillo fuerte
+  'ciudad bolívar': '#f300a6',  // Azul claro brillante
+  'sumapaz': '#111827'          // Negro / Gris casi negro
+};
+
+function getLocalityColor(localityName) {
+  const key = normalizeStr(localityName);
+  return localityColors[key] || '#64748b';
+}
+
 function getIncidentEmoji(type) {
   const emojis = {
     'accidente': '🚨',
@@ -39,17 +83,17 @@ function getIncidentEmoji(type) {
     'infraestructura': '⚠️',
     'obras': '🛠️'
   };
-  return emojis[type.toLowerCase()] || '📌';
+  return emojis[type ? type.toLowerCase() : ''] || '📌';
 }
 
 function formatSeverity(severity) {
   const levels = {
-    'alta': { class: 'high', text: 'Alta' },
-    'media': { class: 'medium', text: 'Media' },
-    'baja': { class: 'low', text: 'Baja' }
+    'alta': { class: 'high', text: 'Alta', color: '#ef4444' },
+    'media': { class: 'medium', text: 'Media', color: '#f59e0b' },
+    'baja': { class: 'low', text: 'Baja', color: '#13cf2c' }
   };
-  const key = severity.toLowerCase();
-  return levels[key] || { class: 'medium', text: severity };
+  const key = (severity || 'media').toLowerCase();
+  return levels[key] || { class: 'medium', text: severity, color: '#f59e0b' };
 }
 
 function getStatusClass(status) {
@@ -58,7 +102,7 @@ function getStatusClass(status) {
     'en revisión': 'status-review',
     'solucionado': 'status-resolved'
   };
-  return statuses[status.toLowerCase()] || 'status-active';
+  return statuses[(status || 'activo').toLowerCase()] || 'status-active';
 }
 
 function getSeverityClass(severity) {
@@ -67,14 +111,127 @@ function getSeverityClass(severity) {
     'media': 'severity-medium',
     'baja': 'severity-low'
   };
-  const key = severity.toLowerCase();
+  const key = (severity || 'media').toLowerCase();
   return levels[key] || 'severity-medium';
 }
 
-// Función auxiliar para normalizar textos (eliminar tildes y pasar a minúsculas)
 function normalizeStr(str) {
   if (!str) return '';
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+const localityCoords = {
+  'usaquén': [4.7047, -74.0305],
+  'chapinero': [4.6583, -74.0557],
+  'santa fe': [4.6017, -74.0662],
+  'san cristóbal': [4.5636, -74.0858],
+  'usme': [4.4983, -74.1130],
+  'tunjuelito': [4.5803, -74.1373],
+  'bosa': [4.6110, -74.1925],
+  'kennedy': [4.6281, -74.1508],
+  'fontibón': [4.6740, -74.1448],
+  'engativá': [4.7170, -74.1147],
+  'suba': [4.7470, -74.0898],
+  'barrios unidos': [4.6750, -74.0688],
+  'teusaquillo': [4.6400, -74.0890],
+  'los mártires': [4.6040, -74.0870],
+  'antonio nariño': [4.5850, -74.1030],
+  'puente aranda': [4.6190, -74.1170],
+  'la candelaria': [4.5960, -74.0750],
+  'rafael uribe uribe': [4.5710, -74.1140],
+  'ciudad bolívar': [4.5580, -74.1670],
+  'sumapaz': [4.2380, -74.2830]
+};
+
+function getFallbackCoordinates(report) {
+  const localityName = typeof report.location === 'object' ? report.location.locality : report.locality;
+  const key = normalizeStr(localityName);
+  if (localityCoords[key]) {
+    const [lat, lng] = localityCoords[key];
+    const offsetLat = (Math.random() - 0.5) * 0.003;
+    const offsetLng = (Math.random() - 0.5) * 0.003;
+    return [lat + offsetLat, lng + offsetLng];
+  }
+  return [BOGOTA_LAT, BOGOTA_LNG];
+}
+
+// ==========================================
+// CONVERTIDOR DE NOMENCLATURA DE BOGOTÁ A LAT/LNG
+// ==========================================
+function getCoordinatesFromBogotaAddress(via, num1, num2, locality) {
+  const baseCoords = localityCoords[normalizeStr(locality)] || [BOGOTA_LAT, BOGOTA_LNG];
+  let [lat, lng] = baseCoords;
+
+  const n1 = parseFloat(num1) || 0;
+  const n2 = parseFloat(num2) || 0;
+
+  if (via === 'Cra' || via === 'Av') {
+    lng = -74.05 - (n1 * 0.0012); 
+    lat = baseCoords[0] + ((n2 - 50) * 0.0008);
+  } else {
+    lat = 4.58 + (n1 * 0.0011);
+    lng = -74.05 - (n2 * 0.0010);
+  }
+
+  return [lat, lng];
+}
+
+// ==========================================
+// RENDERIZAR MARCADORES EN EL MAPA
+// ==========================================
+function renderMapMarkers(reports) {
+  if (!markersLayer) return;
+
+  markersLayer.clearLayers();
+
+  reports.forEach(report => {
+    let coords = null;
+
+    if (report.location?.coordinates?.lat != null && report.location?.coordinates?.lng != null) {
+      coords = [report.location.coordinates.lat, report.location.coordinates.lng];
+    } else if (report.lat != null && report.lng != null) {
+      coords = [report.lat, report.lng];
+    } else {
+      coords = getFallbackCoordinates(report);
+    }
+
+    const addressText = typeof report.location === 'object' ? report.location.address : report.location;
+    const localityText = typeof report.location === 'object' ? report.location.locality : report.locality;
+
+    const emoji = getIncidentEmoji(report.type);
+    const localityColor = getLocalityColor(localityText);
+
+    const customIcon = L.divIcon({
+      className: 'custom-map-marker',
+      html: `<div style="background-color: ${localityColor}; border: 2px solid #ffffff; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.35);">${emoji}</div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    const marker = L.marker(coords, { icon: customIcon });
+
+    const popupContent = `
+      <div style="font-family: sans-serif; min-width: 160px;">
+        <h4 style="margin: 0 0 5px 0; font-size: 14px;">${emoji} ${report.type}</h4>
+        <p style="margin: 0 0 5px 0; font-size: 12px; color: #555;">📍 ${addressText}</p>
+        <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: bold; color: ${localityColor};">Localidad: ${localityText}</p>
+        <button id="popup-detail-${report.id}" style="background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%;">Ver detalles</button>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent);
+
+    marker.on('popupopen', () => {
+      const btnDetail = document.getElementById(`popup-detail-${report.id}`);
+      if (btnDetail) {
+        btnDetail.addEventListener('click', () => {
+          openReportModal(report);
+        });
+      }
+    });
+
+    markersLayer.addLayer(marker);
+  });
 }
 
 // ==========================================
@@ -82,13 +239,12 @@ function normalizeStr(str) {
 // ==========================================
 function openReportModal(report) {
   const modal = document.getElementById('modal');
-  
-  if (!modal) {
-    console.error("No se encontró un elemento con id='modal' en tu HTML.");
-    return;
-  }
+  if (!modal) return;
 
   modal.innerHTML = '';
+
+  const addressText = typeof report.location === 'object' ? report.location.address : report.location;
+  const localityText = typeof report.location === 'object' ? report.location.locality : report.locality;
 
   const emoji = getIncidentEmoji(report.type);
   const statusClass = getStatusClass(report.status || 'Activo');
@@ -156,7 +312,7 @@ function openReportModal(report) {
   labelLocation.textContent = 'Ubicación:';
   const valLocation = document.createElement('span');
   valLocation.id = 'modal-location';
-  valLocation.textContent = `${report.location} (${report.locality})`;
+  valLocation.textContent = `${addressText} (${localityText})`;
   rowLocation.appendChild(labelLocation);
   rowLocation.appendChild(valLocation);
 
@@ -181,22 +337,11 @@ function openReportModal(report) {
   descBox.appendChild(descTitle);
   descBox.appendChild(descText);
 
-  const footerInfo = document.createElement('div');
-  footerInfo.classList.add('modal-footer-info');
-  const footerSpan = document.createElement('span');
-  const footerStrong = document.createElement('strong');
-  footerStrong.textContent = `${report.reportsCount || 1} usuarios`;
-  footerSpan.textContent = '👥 Reportado por ';
-  footerSpan.appendChild(footerStrong);
-  footerSpan.append(' con situaciones similares');
-  footerInfo.appendChild(footerSpan);
-
   modalBody.appendChild(rowStatus);
   modalBody.appendChild(rowSeverity);
   modalBody.appendChild(rowLocation);
   modalBody.appendChild(rowTime);
   modalBody.appendChild(descBox);
-  modalBody.appendChild(footerInfo);
 
   modalContent.appendChild(modalHeader);
   modalContent.appendChild(modalBody);
@@ -216,11 +361,13 @@ function openReportModal(report) {
 }
 
 // ==========================================
-// RENDERIZAR LISTA DE REPORTES
+// RENDERIZAR LISTA DE REPORTES Y MAPA
 // ==========================================
 export function renderReports(reports) {
   const container = document.querySelector('.reports-list-container');
   
+  renderMapMarkers(reports);
+
   if (!container) return;
 
   container.innerHTML = '';
@@ -236,8 +383,12 @@ export function renderReports(reports) {
   }
 
   reports.forEach(report => {
+    const addressText = typeof report.location === 'object' ? report.location.address : report.location;
+    const localityText = typeof report.location === 'object' ? report.location.locality : report.locality;
+
     const emoji = getIncidentEmoji(report.type);
     const severityInfo = formatSeverity(report.severity);
+    const localityColor = getLocalityColor(localityText);
 
     const cardElement = document.createElement('div');
     cardElement.classList.add('report-card');
@@ -268,11 +419,13 @@ export function renderReports(reports) {
 
     const locationP = document.createElement('p');
     locationP.classList.add('report-location');
-    locationP.textContent = `📍 ${report.location} `;
+    locationP.textContent = `📍 ${addressText} `;
     
     const localitySpan = document.createElement('span');
     localitySpan.classList.add('report-locality');
-    localitySpan.textContent = `(${report.locality})`;
+    localitySpan.style.color = localityColor;
+    localitySpan.style.fontWeight = 'bold';
+    localitySpan.textContent = `(${localityText})`;
     locationP.appendChild(localitySpan);
 
     const footerInfo = document.createElement('div');
@@ -305,571 +458,14 @@ export function renderReports(reports) {
 }
 
 // ==========================================
-// MOCK DATA (Datos de prueba enriquecidos)
+// LÓGICA DE FILTRADO UNIFICADA
 // ==========================================
-const mockReports = [
-  {
-    id: 1,
-    type: 'Retraso',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Autopista Norte con Cl. 100',
-    locality: 'Usaquén',
-    time: 'Hace 42 min',
-    description: 'Demoras significativas en la operación troncal debido a alta congestión vehicular en los carriles exclusivos.',
-    reportsCount: 5
-  },
-  {
-    id: 2,
-    type: 'Accidente',
-    severity: 'alta',
-    status: 'En revisión',
-    location: 'Av. Caracas con Calle 45',
-    locality: 'Chapinero',
-    time: 'Hace 15 min',
-    description: 'Colisión múltiple genera bloqueo parcial de la vía. Autoridades de tránsito en camino.',
-    reportsCount: 12
-  },
-  {
-    id: 3,
-    type: 'Congestion',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Calle 26 con Cr. 68',
-    locality: 'Fontibón',
-    time: 'Hace 8 min',
-    description: 'Tráfico lento en sentido oriente-occidente por alto flujo vehicular rutinario.',
-    reportsCount: 2
-  },
-  {
-    id: 4,
-    type: 'Bloqueo',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Carrera 7 con Calle 72',
-    locality: 'Chapinero',
-    time: 'Hace 20 min',
-    description: 'Manifestación social afecta la movilidad en ambos sentidos de la vía.',
-    reportsCount: 18
-  },
-  {
-    id: 5,
-    type: 'Estacion',
-    severity: 'media',
-    status: 'En revisión',
-    location: 'Estación Calle 100 (Glorieta)',
-    locality: 'Usaquén',
-    time: 'Hace 30 min',
-    description: 'Afluencia masiva de pasajeros y retraso en la llegada de servicios alimentadores.',
-    reportsCount: 7
-  },
-  {
-    id: 6,
-    type: 'Infraestructura',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'NQS con Calle 3 sur',
-    locality: 'Puente Aranda',
-    time: 'Hace 1 hora',
-    description: 'Hueco profundo en el carril exclusivo de TransMilenio pone en riesgo a los articulados.',
-    reportsCount: 9
-  },
-  {
-    id: 7,
-    type: 'Obras',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Avenida Boyacá con Calle 80',
-    locality: 'Engativá',
-    time: 'Hace 2 horas',
-    description: 'Mantenimiento vial nocturno que se extendió hasta la mañana, reduciendo un carril.',
-    reportsCount: 3
-  },
-  {
-    id: 8,
-    type: 'Accidente',
-    severity: 'media',
-    status: 'En revisión',
-    location: 'Autopista Sur con Cra. 72',
-    locality: 'Bosa',
-    time: 'Hace 25 min',
-    description: 'Vehículo particular varado tras choque leve contra separador.',
-    reportsCount: 4
-  },
-  {
-    id: 9,
-    type: 'Congestion',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Calle 13 con Cra. 100',
-    locality: 'Fontibón',
-    time: 'Hace 12 min',
-    description: 'Alto flujo de vehículos de carga pesada generando tránsito lento hacia la salida de la ciudad.',
-    reportsCount: 6
-  },
-  {
-    id: 10,
-    type: 'Retraso',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Portal del Norte',
-    locality: 'Usaquén',
-    time: 'Hace 5 min',
-    description: 'Falla técnica en torniquetes genera fila extensa para el ingreso a la estación.',
-    reportsCount: 14
-  },
-  {
-    id: 11,
-    type: 'Bloqueo',
-    severity: 'alta',
-    status: 'Solucionado',
-    location: 'Carrera 10 con Calle 19',
-    locality: 'Santa Fe',
-    time: 'Hace 3 horas',
-    description: 'Camión varado que obstruía el carril central ya fue retirado por grúa.',
-    reportsCount: 8
-  },
-  {
-    id: 12,
-    type: 'Estacion',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Estación Universidades',
-    locality: 'La Candelaria',
-    time: 'Hace 18 min',
-    description: 'Pantallas de información de rutas fuera de servicio temporalmente.',
-    reportsCount: 2
-  },
-  {
-    id: 13,
-    type: 'Accidente',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Avenida Suba con Calle 127',
-    locality: 'Suba',
-    time: 'Hace 3 min',
-    description: 'Atropello a peatón. Ambulancia y policía en el punto atendiendo la emergencia.',
-    reportsCount: 22
-  },
-  {
-    id: 14,
-    type: 'Congestion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Calle 80 con Cra. 114',
-    locality: 'Engativá',
-    time: 'Hace 35 min',
-    description: 'Trancón monumental ingresando al Puente de Guadua por plan éxodo.',
-    reportsCount: 30
-  },
-  {
-    id: 15,
-    type: 'Infraestructura',
-    severity: 'media',
-    status: 'En revisión',
-    location: 'Calle 72 con Cra. 13',
-    locality: 'Chapinero',
-    time: 'Hace 50 min',
-    description: 'Semáforo desincronizado en el cruce peatonal genera riesgo de accidentalidad.',
-    reportsCount: 11
-  },
-  {
-    id: 16,
-    type: 'Obras',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Avenida 68 con Calle 26',
-    locality: 'Teusaquillo',
-    time: 'Hace 4 horas',
-    description: 'Trabajos de valorización y construcción de troncal de TransMilenio reducen calzada mixta.',
-    reportsCount: 5
-  },
-  {
-    id: 17,
-    type: 'Retraso',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Portal Sur',
-    locality: 'Bosa',
-    time: 'Hace 22 min',
-    description: 'Demora leve en la salida de servicios zonales (SITP) por congestión en patios.',
-    reportsCount: 4
-  },
-  {
-    id: 18,
-    type: 'Accidente',
-    severity: 'baja',
-    status: 'Solucionado',
-    location: 'Calle 53 con Cra. 24',
-    locality: 'Teusaquillo',
-    time: 'Hace 2 horas',
-    description: 'Lainas de latas entre dos taxis sin mayores afectaciones a la movilidad.',
-    reportsCount: 3
-  },
-  {
-    id: 19,
-    type: 'Bloqueo',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Carrera 30 con Calle 8',
-    locality: 'Los Mártires',
-    time: 'Hace 40 min',
-    description: 'Avería mecánica de articulado bloquea carril de incorporación.',
-    reportsCount: 15
-  },
-  {
-    id: 20,
-    type: 'Estacion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Estación Ricaurte',
-    locality: 'Puente Aranda',
-    time: 'Hace 10 min',
-    description: 'Puerta antivandálica averiada en el vagón sur, paso restringido.',
-    reportsCount: 16
-  },
-  {
-    id: 21,
-    type: 'Congestion',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Avenida Boyacá con Calle 53',
-    locality: 'Engativá',
-    time: 'Hace 28 min',
-    description: 'Vehículo varado en el carril central genera represamiento vehicular.',
-    reportsCount: 7
-  },
-  {
-    id: 22,
-    type: 'Infraestructura',
-    severity: 'baja',
-    status: 'En revisión',
-    location: 'Cra. 7 con Cl. 19',
-    locality: 'Santa Fe',
-    time: 'Hace 1 hora',
-    description: 'Tapa de alcantarilla sin asegurar sobre el andén peatonal.',
-    reportsCount: 2
-  },
-  {
-    id: 23,
-    type: 'Obras',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Calle 100 con Cra. 15',
-    locality: 'Usaquén',
-    time: 'Hace 3 horas',
-    description: 'Intervención de redes de acueducto y alcantarillado sobre el carril lento.',
-    reportsCount: 1
-  },
-  {
-    id: 24,
-    type: 'Accidente',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Autopista Sur con Calle 65 sur',
-    locality: 'Ciudad Bolívar',
-    time: 'Hace 14 min',
-    description: 'Colisión entre motocicleta y bus zonal. Tránsito pesado en la zona.',
-    reportsCount: 19
-  },
-  {
-    id: 25,
-    type: 'Retraso',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Portal de Suba',
-    locality: 'Suba',
-    time: 'Hace 19 min',
-    description: 'Alta demanda de usuarios combinada con menor frecuencia de servicios en hora pico.',
-    reportsCount: 10
-  },
-  {
-    id: 26,
-    type: 'Accidente',
-    severity: 'baja',
-    status: 'Solucionado',
-    location: 'Calle 127 con Cra. 19',
-    locality: 'Usaquén',
-    time: 'Hace 2 horas',
-    description: 'Choque simple de laminas sin lesionados, vehículos movilizados a la berma.',
-    reportsCount: 2
-  },
-  {
-    id: 27,
-    type: 'Bloqueo',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Avenida 1 de Mayo con Cra. 68',
-    locality: 'Kennedy',
-    time: 'Hace 25 min',
-    description: 'Protesta comunitaria por fallas en el suministro de servicios públicos.',
-    reportsCount: 14
-  },
-  {
-    id: 28,
-    type: 'Congestion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Autopista Sur con Portal Sur',
-    locality: 'Bosa',
-    time: 'Hace 10 min',
-    description: 'Saturación en los accesos al portal por alta afluencia de pasajeros saliendo de laborar.',
-    reportsCount: 11
-  },
-  {
-    id: 29,
-    type: 'Infraestructura',
-    severity: 'media',
-    status: 'En revisión',
-    location: 'Calle 26 con Cra. 30',
-    locality: 'Teusaquillo',
-    time: 'Hace 45 min',
-    description: 'Falla en el sistema de señalización lumínica del paso peatonal subterráneo.',
-    reportsCount: 5
-  },
-  {
-    id: 30,
-    type: 'Estacion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Portal del Sur',
-    locality: 'Bosa',
-    time: 'Hace 12 min',
-    description: 'Sobrecupo severo en los servicios de TransMilenio con destino al centro.',
-    reportsCount: 13
-  },
-  {
-    id: 31,
-    type: 'Obras',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Carrera Séptima con Calle 100',
-    locality: 'Usaquén',
-    time: 'Hace 3 horas',
-    description: 'Demarcación y señalización vial ejecutada por la Secretaría de Movilidad.',
-    reportsCount: 3
-  },
-  {
-    id: 32,
-    type: 'Retraso',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Avenida Villavicencio con Cra. 86',
-    locality: 'Kennedy',
-    time: 'Hace 30 min',
-    description: 'Flujo vehicular lento debido a camión varado en carril central.',
-    reportsCount: 8
-  },
-  {
-    id: 33,
-    type: 'Accidente',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Calle 13 con Cra. 50',
-    locality: 'Puente Aranda',
-    time: 'Hace 7 min',
-    description: 'Accidente grave entre tractocamión y ciclista. Vía completamente cerrada.',
-    reportsCount: 25
-  },
-  {
-    id: 34,
-    type: 'Congestion',
-    severity: 'baja',
-    status: 'Solucionado',
-    location: 'Calle 100 con Autopista Norte',
-    locality: 'Usaquén',
-    time: 'Hace 2 horas',
-    description: 'Congestión matutina disipada con normalización del tráfico.',
-    reportsCount: 4
-  },
-  {
-    id: 35,
-    type: 'Bloqueo',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Carrera 13 con Calle 54',
-    locality: 'Chapinero',
-    time: 'Hace 18 min',
-    description: 'Árbol caído sobre la calzada bloquea parcialmente el paso vehicular.',
-    reportsCount: 9
-  },
-  {
-    id: 36,
-    type: 'Estacion',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Estación Bicentenario',
-    locality: 'Santa Fe',
-    time: 'Hace 40 min',
-    description: 'Fila moderada para recarga de tarjetas tullave en taquilla principal.',
-    reportsCount: 3
-  },
-  {
-    id: 37,
-    type: 'Infraestructura',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Avenida Circunvalar con Calle 20',
-    locality: 'Santa Fe',
-    time: 'Hace 1 hora',
-    description: 'Deslizamiento menor de tierra sobre el carril derecho debido a las lluvias recientes.',
-    reportsCount: 7
-  },
-  {
-    id: 38,
-    type: 'Obras',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Calle 63 con Cra. 24',
-    locality: 'Teusaquillo',
-    time: 'Hace 2 horas',
-    description: 'Repavimentación asfáltica en los alrededores del parque Simón Bolívar.',
-    reportsCount: 6
-  },
-  {
-    id: 39,
-    type: 'Retraso',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Portal Américas',
-    locality: 'Kennedy',
-    time: 'Hace 15 min',
-    description: 'Retrasos generalizados en las rutas alimentadoras por protestas en vías aledañas.',
-    reportsCount: 16
-  },
-  {
-    id: 40,
-    type: 'Accidente',
-    severity: 'media',
-    status: 'En revisión',
-    location: 'Avenida Boyacá con Calle 127',
-    locality: 'Suba',
-    time: 'Hace 20 min',
-    description: 'Automóvil choca contra poste de luz. Movilidad reducida.',
-    reportsCount: 9
-  },
-  {
-    id: 41,
-    type: 'Congestion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'NQS con Calle 80',
-    locality: ' Barrios Unidos',
-    time: 'Hace 12 min',
-    description: 'Colapso vehicular en el deprimido de la NQS con Calle 80.',
-    reportsCount: 14
-  },
-  {
-    id: 42,
-    type: 'Bloqueo',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Calle 26 con Cra. 7',
-    locality: 'Santa Fe',
-    time: 'Hace 35 min',
-    description: 'Marcha estudiantil ocupa temporalmente los carriles mixtos.',
-    reportsCount: 20
-  },
-  {
-    id: 43,
-    type: 'Estacion',
-    severity: 'baja',
-    status: 'Activo',
-    location: 'Estación Marly',
-    locality: 'Chapinero',
-    time: 'Hace 25 min',
-    description: 'Demora en la apertura de puertas automáticas en el vagón norte.',
-    reportsCount: 2
-  },
-  {
-    id: 44,
-    type: 'Infraestructura',
-    severity: 'baja',
-    status: 'En revisión',
-    location: 'Carrera 15 con Calle 85',
-    locality: 'Chapinero',
-    time: 'Hace 50 min',
-    description: 'Hundimiento leve en la placa asfáltica del carril de la derecha.',
-    reportsCount: 4
-  },
-  {
-    id: 45,
-    type: 'Obras',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Autopista Norte con Calle 170',
-    locality: 'Usaquén',
-    time: 'Hace 3 horas',
-    description: 'Obras de ampliación de la troncal generan cierres intermitentes.',
-    reportsCount: 12
-  },
-  {
-    id: 46,
-    type: 'Retraso',
-    severity: 'baja',
-    status: 'Solucionado',
-    location: 'Estación Las Aguas',
-    locality: 'La Candelaria',
-    time: 'Hace 4 horas',
-    description: 'Aglomeración matutina controlada por personal de la estación.',
-    reportsCount: 5
-  },
-  {
-    id: 47,
-    type: 'Accidente',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Calle 80 con Cra. 68',
-    locality: 'Engativá',
-    time: 'Hace 5 min',
-    description: 'Volcamiento de vehículo particular sobre la calzada rápida. Tráfico detenido.',
-    reportsCount: 28
-  },
-  {
-    id: 48,
-    type: 'Congestion',
-    severity: 'media',
-    status: 'Activo',
-    location: 'Avenida Caracas con Calle 72',
-    locality: 'Chapinero',
-    time: 'Hace 18 min',
-    description: 'Tránsito lento debido a alto volumen de buses zonales mal parqueados en bahías.',
-    reportsCount: 7
-  },
-  {
-    id: 49,
-    type: 'Bloqueo',
-    severity: 'baja',
-    status: 'Solucionado',
-    location: 'Carrera Séptima con Calle 24',
-    locality: 'Santa Fe',
-    time: 'Hace 3 horas',
-    description: 'Vehículo obstaculizando el carril preferencial retirado con éxito.',
-    reportsCount: 3
-  },
-  {
-    id: 50,
-    type: 'Estacion',
-    severity: 'alta',
-    status: 'Activo',
-    location: 'Portal del Norte',
-    locality: 'Usaquén',
-    time: 'Hace 8 min',
-    description: 'Falla general en el sistema de validación biométrica en torniquetes principales.',
-    reportsCount: 17
-  }
-];
-
-// ==========================================
-// LÓGICA DE FILTRADO
-// ==========================================
-function filterReports() {
-  const localityFilter = document.getElementById('filter-locality').value;
-  const typeFilter = document.getElementById('filter-type').value;
-
-  const filteredReports = mockReports.filter(report => {
-    const matchesLocality = !localityFilter || normalizeStr(report.locality) === normalizeStr(localityFilter);
-    const matchesType = !typeFilter || normalizeStr(report.type) === normalizeStr(typeFilter);
+function applyFilters(localityVal, typeVal) {
+  const filteredReports = currentReports.filter(report => {
+    const reportLocality = typeof report.location === 'object' ? report.location.locality : report.locality;
+    
+    const matchesLocality = !localityVal || normalizeStr(reportLocality) === normalizeStr(localityVal);
+    const matchesType = !typeVal || normalizeStr(report.type) === normalizeStr(typeVal);
     
     return matchesLocality && matchesType;
   });
@@ -878,15 +474,11 @@ function filterReports() {
 }
 
 // ==========================================
-// FUNCIÓN PARA ABRIR EL MODAL DE CREACIÓN DE REPORTE
+// MODAL DE CREACIÓN DE REPORTE
 // ==========================================
 function openCreateReportModal(onReportSubmit) {
   const modal = document.getElementById('modal');
-  
-  if (!modal) {
-    console.error("No se encontró un elemento con id='modal' en tu HTML.");
-    return;
-  }
+  if (!modal) return;
 
   modal.innerHTML = '';
 
@@ -904,14 +496,12 @@ function openCreateReportModal(onReportSubmit) {
   modalEmojiSpan.textContent = '📝';
 
   const modalTypeH2 = document.createElement('h2');
-  modalTypeH2.id = 'modal-type';
   modalTypeH2.textContent = 'Crear Nuevo Reporte';
 
   modalTitleWrapper.appendChild(modalEmojiSpan);
   modalTitleWrapper.appendChild(modalTypeH2);
 
   const closeBtn = document.createElement('button');
-  closeBtn.id = 'modal-close';
   closeBtn.classList.add('modal-close-btn');
   closeBtn.innerHTML = '&times;';
 
@@ -922,19 +512,17 @@ function openCreateReportModal(onReportSubmit) {
   modalBody.classList.add('modal-body');
 
   const form = document.createElement('form');
-  form.id = 'create-report-form';
   form.style.display = 'flex';
   form.style.flexDirection = 'column';
   form.style.gap = '0.85rem';
 
+  // Tipo
   const groupType = document.createElement('div');
   groupType.classList.add('modal-info-row');
   const labelType = document.createElement('span');
   labelType.classList.add('modal-label');
   labelType.textContent = 'Tipo:';
-  
   const selectType = document.createElement('select');
-  selectType.name = 'type';
   selectType.classList.add('report-select');
   selectType.required = true;
   
@@ -957,14 +545,13 @@ function openCreateReportModal(onReportSubmit) {
   groupType.appendChild(labelType);
   groupType.appendChild(selectType);
 
+  // Gravedad
   const groupSeverity = document.createElement('div');
   groupSeverity.classList.add('modal-info-row');
   const labelSeverity = document.createElement('span');
   labelSeverity.classList.add('modal-label');
   labelSeverity.textContent = 'Gravedad:';
-  
   const selectSeverity = document.createElement('select');
-  selectSeverity.name = 'severity';
   selectSeverity.classList.add('report-select');
   selectSeverity.required = true;
   
@@ -983,14 +570,13 @@ function openCreateReportModal(onReportSubmit) {
   groupSeverity.appendChild(labelSeverity);
   groupSeverity.appendChild(selectSeverity);
 
+  // Localidad
   const groupLocality = document.createElement('div');
   groupLocality.classList.add('modal-info-row');
   const labelLocality = document.createElement('span');
   labelLocality.classList.add('modal-label');
   labelLocality.textContent = 'Localidad:';
-  
   const selectLocality = document.createElement('select');
-  selectLocality.name = 'locality';
   selectLocality.classList.add('report-select');
   selectLocality.required = true;
   
@@ -1015,28 +601,76 @@ function openCreateReportModal(onReportSubmit) {
   groupLocality.appendChild(labelLocality);
   groupLocality.appendChild(selectLocality);
 
+  // Dirección estructurada
   const groupLocation = document.createElement('div');
-  groupLocation.classList.add('modal-info-row');
+  groupLocation.style.display = 'flex';
+  groupLocation.style.flexDirection = 'column';
+  groupLocation.style.gap = '0.4rem';
+
   const labelLocation = document.createElement('span');
   labelLocation.classList.add('modal-label');
-  labelLocation.textContent = 'Dirección:';
-  
-  const inputLocation = document.createElement('input');
-  inputLocation.type = 'text';
-  inputLocation.name = 'location';
-  inputLocation.placeholder = 'Ej: Autopista Norte con Cl. 100';
-  inputLocation.classList.add('report-select');
-  inputLocation.required = true;
+  labelLocation.textContent = 'Dirección estructurada (Nomenclatura Bogotá):';
   groupLocation.appendChild(labelLocation);
-  groupLocation.appendChild(inputLocation);
 
+  const addressGrid = document.createElement('div');
+  addressGrid.style.display = 'grid';
+  addressGrid.style.gridTemplateColumns = '2fr 2fr 1fr 2fr 1fr';
+  addressGrid.style.gap = '0.4rem';
+  addressGrid.style.alignItems = 'center';
+
+  const selectVia = document.createElement('select');
+  selectVia.classList.add('report-select');
+  const vias = [
+    { value: 'Cl', text: 'Calle (Cl)' },
+    { value: 'Cra', text: 'Carrera (Cra)' },
+    { value: 'Av', text: 'Avenida (Av)' },
+    { value: 'Dg', text: 'Diagonal (Dg)' },
+    { value: 'Tv', text: 'Transversal (Tv)' }
+  ];
+  vias.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.value;
+    opt.textContent = v.text;
+    selectVia.appendChild(opt);
+  });
+
+  const inputNum1 = document.createElement('input');
+  inputNum1.type = 'number';
+  inputNum1.placeholder = 'Número';
+  inputNum1.classList.add('report-select');
+  inputNum1.required = true;
+
+  const spanHash = document.createElement('span');
+  spanHash.textContent = '#';
+  spanHash.style.textAlign = 'center';
+  spanHash.style.fontWeight = 'bold';
+  spanHash.style.color = '#555';
+
+  const inputNum2 = document.createElement('input');
+  inputNum2.type = 'number';
+  inputNum2.placeholder = 'Cruce';
+  inputNum2.classList.add('report-select');
+  inputNum2.required = true;
+
+  const inputPlaca = document.createElement('input');
+  inputPlaca.type = 'number';
+  inputPlaca.placeholder = 'Placa';
+  inputPlaca.classList.add('report-select');
+  inputPlaca.required = true;
+
+  addressGrid.appendChild(selectVia);
+  addressGrid.appendChild(inputNum1);
+  addressGrid.appendChild(spanHash);
+  addressGrid.appendChild(inputNum2);
+  addressGrid.appendChild(inputPlaca);
+  groupLocation.appendChild(addressGrid);
+
+  // Descripción
   const descBox = document.createElement('div');
   descBox.classList.add('modal-description-box');
   const descTitle = document.createElement('h4');
   descTitle.textContent = 'Descripción del incidente:';
-  
   const textareaDesc = document.createElement('textarea');
-  textareaDesc.name = 'description';
   textareaDesc.placeholder = 'Detalles adicionales...';
   textareaDesc.rows = 3;
   textareaDesc.classList.add('report-select');
@@ -1057,7 +691,6 @@ function openCreateReportModal(onReportSubmit) {
   form.appendChild(submitBtn);
 
   modalBody.appendChild(form);
-
   modalContent.appendChild(modalHeader);
   modalContent.appendChild(modalBody);
   modal.appendChild(modalContent);
@@ -1066,33 +699,44 @@ function openCreateReportModal(onReportSubmit) {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const formData = {
+    const formattedAddress = `${selectVia.value} ${inputNum1.value} # ${inputNum2.value} - ${inputPlaca.value}, Bogotá`;
+    
+    // Cálculo de coordenadas mediante la retícula vial de Bogotá
+    const calculatedCoords = getCoordinatesFromBogotaAddress(
+      selectVia.value, 
+      inputNum1.value, 
+      inputNum2.value, 
+      selectLocality.value
+    );
+    
+    const newReport = {
       id: Date.now(),
       type: selectType.value,
       severity: selectSeverity.value,
       status: 'Activo',
-      location: inputLocation.value,
-      locality: selectLocality.value,
+      location: {
+        address: formattedAddress,
+        coordinates: {
+          lat: calculatedCoords[0],
+          lng: calculatedCoords[1]
+        },
+        locality: selectLocality.value
+      },
       time: 'Hace un momento',
       description: textareaDesc.value,
       reportsCount: 1
     };
 
     if (onReportSubmit) {
-      onReportSubmit(formData);
+      onReportSubmit(newReport);
     }
 
     modal.classList.add('hidden');
   });
 
-  closeBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-  });
-
+  closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.add('hidden');
-    }
+    if (e.target === modal) modal.classList.add('hidden');
   });
 }
 
@@ -1102,28 +746,94 @@ function openCreateReportModal(onReportSubmit) {
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initMap();
-  renderReports(mockReports);
+  
+  // Renderizado inicial con la base de datos por defecto (Hora Pico)
+  renderReports(currentReports);
 
-  // Vincular apertura del modal de creación
   const openModalBtn = document.getElementById('btn-open-modal');
   if (openModalBtn) {
     openModalBtn.addEventListener('click', () => {
       openCreateReportModal((newReport) => {
-        mockReports.unshift(newReport); // Añadir al inicio de los reportes
-        filterReports();               // Aplicar filtros actuales a la nueva lista
+        currentReports.unshift(newReport);
+        
+        const activeLocality = document.getElementById('filter-locality')?.value || document.getElementById('map-filter-locality')?.value || '';
+        const activeType = document.getElementById('filter-type')?.value || document.getElementById('map-filter-type')?.value || '';
+        applyFilters(activeLocality, activeType);
       });
     });
   }
 
-  // Vincular eventos de cambio en los selects de filtrado
+  // ==========================================
+  // SELECTOR DE ESCENARIOS (Sincronizado Map & Reports)
+  // ==========================================
+  const scenarioSelectIds = ['scenario-select', 'reports-scenario-select', 'map-scenario-select'];
+
+  scenarioSelectIds.forEach(id => {
+    const scenarioSelect = document.getElementById(id);
+    
+    if (scenarioSelect) {
+      scenarioSelect.addEventListener('change', (e) => {
+        const scenario = e.target.value;
+
+        // Sincronizar el valor visual en todos los selectores de escenario existentes
+        scenarioSelectIds.forEach(otherId => {
+          const el = document.getElementById(otherId);
+          if (el) el.value = scenario;
+        });
+
+        if (scenario === 'rain' || scenario === 'lluvia') {
+          currentReports = mockReportsRain;
+        } else if (scenario === 'clear' || scenario === 'despejado') {
+          currentReports = mockReportsClearDay;
+        } else {
+          currentReports = mockReportsHourPeak;
+        }
+
+        // Limpiar todos los filtros de localidad y tipo al cambiar de escenario
+        ['filter-locality', 'map-filter-locality', 'filter-type', 'map-filter-type'].forEach(filterId => {
+          const el = document.getElementById(filterId);
+          if (el) el.value = '';
+        });
+
+        renderReports(currentReports);
+      });
+    }
+  });
+
   const filterLocality = document.getElementById('filter-locality');
   const filterType = document.getElementById('filter-type');
+  const mapFilterLocality = document.getElementById('map-filter-locality');
+  const mapFilterType = document.getElementById('map-filter-type');
 
   if (filterLocality) {
-    filterLocality.addEventListener('change', filterReports);
+    filterLocality.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (mapFilterLocality) mapFilterLocality.value = val;
+      applyFilters(val, filterType ? filterType.value : (mapFilterType ? mapFilterType.value : ''));
+    });
   }
 
   if (filterType) {
-    filterType.addEventListener('change', filterReports);
+    filterType.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (mapFilterType) mapFilterType.value = val;
+      applyFilters(filterLocality ? filterLocality.value : (mapFilterLocality ? mapFilterLocality.value : ''), val);
+    });
+  }
+
+  if (mapFilterLocality) {
+    mapFilterLocality.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (filterLocality) filterLocality.value = val;
+      applyFilters(val, mapFilterType ? mapFilterType.value : (filterType ? filterType.value : ''));
+    });
+  }
+
+  if (mapFilterType) {
+    mapFilterType.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (filterType) filterType.value = val;
+      applyFilters(mapFilterLocality ? mapFilterLocality.value : (filterLocality ? filterLocality.value : ''), val);
+    });
   }
 });
