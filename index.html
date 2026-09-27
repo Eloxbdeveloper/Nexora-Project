@@ -1,10 +1,126 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0B5FFF" />
-<title>Muévete CB · Movilidad Ciudad Bolívar</title>
+<title>Muévete CB — Plataforma inteligente de movilidad</title>
+<link rel="stylesheet" href="./css/styles.css" />
 </head>
-<body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+<body>
+  <div class="phone">
+
+    <header class="app-header">
+      <button id="menu-btn" class="icon-btn" aria-label="Menú">☰</button>
+      <div class="app-title">
+        <span>🚡 Muévete CB</span>
+        <span id="badge-mode" class="badge-mode">📴 Modo demo</span>
+      </div>
+      <button id="panic-btn" class="panic-fab" title="Botón de emergencia / pánico" aria-label="Botón de emergencia">🆘</button>
+    </header>
+
+    <main class="app-content">
+
+      <!-- ===================== INICIO / RUTAS ===================== -->
+      <section id="panel-inicio" class="tab-panel">
+        <p class="sello-simulado">DATOS SIMULADOS · Hackathon Muévete CB</p>
+
+        <h2>¿A dónde vas hoy?</h2>
+        <form id="trip-form">
+          <label>⚫ Origen
+            <select id="input-origin" required></select>
+          </label>
+          <label>🎯 Destino
+            <select id="input-destination" required></select>
+          </label>
+
+          <div class="field">
+            <span>⏱ ¿Cuánto tiempo tienes?</span>
+            <div class="pill-group" id="minutes-pills">
+              <button type="button" class="pill" data-min="20">20</button>
+              <button type="button" class="pill" data-min="30">30</button>
+              <button type="button" class="pill active" data-min="40">40</button>
+              <button type="button" class="pill" data-min="60">60</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Soy:</span>
+            <div class="chip-group" id="profile-chips">
+              <button type="button" class="chip active" data-profile="estudiante">Estudiante</button>
+              <button type="button" class="chip" data-profile="trabajo">Trabajo</button>
+              <button type="button" class="chip" data-profile="comercio">Comercio</button>
+              <button type="button" class="chip" data-profile="accesible">♿ Accesible</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">🔍 Buscar mi ruta</button>
+        </form>
+
+        <button id="reports-chip" class="chip-alert" type="button">⚠ <span id="reports-count">0</span> reportes activos hoy</button>
+
+        <div id="trip-result" class="hidden"></div>
+      </section>
+
+      <!-- ===================== SOCIAL ===================== -->
+      <section id="panel-social" class="tab-panel hidden">
+        <div class="panel-head">
+          <h2>📰 Comunidad Muévete CB</h2>
+          <button id="new-post-btn" class="btn-secondary">+ Publicar</button>
+        </div>
+        <p class="muted">Reportes y avisos de tus vecinos, moderados por el agente de seguridad.</p>
+        <div id="social-feed"></div>
+      </section>
+
+      <!-- ===================== SEGURIDAD / RUTA PROTEGIDA ===================== -->
+      <section id="panel-seguridad" class="tab-panel hidden">
+        <h2>🛡️ Ruta protegida</h2>
+        <p class="muted">Seguimiento pensado para menores de edad, con aviso automático a contactos de confianza.</p>
+
+        <div id="safety-card" class="card"></div>
+
+        <div class="field">
+          <button id="simulate-deviation-btn" class="btn-secondary">Simular desvío de ruta (demo)</button>
+          <button id="simulate-reset-btn" class="btn-ghost">Restablecer</button>
+        </div>
+
+        <h3>Contactos de confianza</h3>
+        <div id="guardians-list"></div>
+
+        <h3>Puntos seguros cercanos</h3>
+        <div id="safe-points-list"></div>
+
+        <button id="panic-btn-2" class="btn-panic">🆘 Botón de pánico</button>
+      </section>
+
+      <!-- ===================== PERFIL ===================== -->
+      <section id="panel-perfil" class="tab-panel hidden">
+        <h2>👤 Perfil</h2>
+        <div class="field">
+          <span>Modo de cuenta (demo)</span>
+          <div class="chip-group" id="mode-chips">
+            <button type="button" class="chip active" data-mode="adult">Mayor de edad</button>
+            <button type="button" class="chip" data-mode="minor">Menor de edad</button>
+          </div>
+          <p class="muted small">Cambia el modo para ver cómo la app restringe la red social y activa la ruta protegida para menores.</p>
+        </div>
+
+        <h3>Sobre el proyecto</h3>
+        <p class="muted small">Muévete CB integra rutas formales (TransMiCable, SITP) e informales (colectivos, rutas veredales) de Ciudad Bolívar en un solo agente de IA con cuatro roles: recomendador de rutas, red social comunitaria, moderación de seguridad y ruta protegida para menores.</p>
+      </section>
+
+    </main>
+
+    <nav id="bottom-nav" class="bottom-nav">
+      <button data-tab="inicio" class="active"><span>🏠</span><small>Inicio</small></button>
+      <button data-tab="social"><span>📰</span><small>Social</small></button>
+      <button data-tab="seguridad"><span>🛡️</span><small>Seguridad</small></button>
+      <button data-tab="perfil"><span>👤</span><small>Perfil</small></button>
+    </nav>
+
+    <div id="modal-root" class="hidden"></div>
+  </div>
+
+  <script src="./js/data.js"></script>
+  <script src="./js/app.js"></script>
+</body>
 </html>

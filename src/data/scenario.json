@@ -1,5 +1,0 @@
-{"simulated":true,"demoClock":"06:20","demoDay":"L",
-"persona":{"name":"Camila","role":"estudiante","usualRouteId":"R04"},
-"query":{"origin":"S06","destination":"P01","minutesAvailable":40},
-"liveReportTemplate":{"type":"bloqueo","routeId":"R04","from":"S07","to":"S08","severity":2,"description":"Obra y paso a un solo carril en Sierra Morena","ttlMin":90,"source":"ciudadano"},
-"calibration":{"beforeReport":{"bestRoute":"R04","totalMin":28},"afterReport":{"usualRouteMin":53,"bestRoute":"R05 + R01 + R02","totalMin":34,"savedMin":19,"marginMin":6}}}

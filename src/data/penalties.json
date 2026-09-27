@@ -1,4 +1,0 @@
-{"transferPenaltyMin":3,"walkSpeedFactor":1.0,"unreliabilityWeight":0.5,
-"reportRules":{"bloqueo":{"1":{"extraMin":8},"2":{"extraMin":25},"3":{"closed":true}},"demora":{"usesField":"minutesExtra"},"cambio":{"usesField":"headwayMultiplier"}},
-"confidence":{"base":0.5,"perConfirmation":0.15,"max":1.0},
-"decay":{"startsAtTtlFraction":0.7,"endsAtTtlFraction":1.0}}
