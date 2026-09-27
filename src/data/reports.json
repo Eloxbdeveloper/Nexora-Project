@@ -1,0 +1,4 @@
+{"simulated":true,"reports":[
+{"id":"RP-001","type":"demora","routeId":"R02","from":"S08","to":"S09","severity":1,"minutesExtra":4,"description":"Tráfico lento por obra en la vía a Meissen","minutesAgo":25,"ttlMin":60,"confirmations":3,"source":"ciudadano"},
+{"id":"RP-002","type":"cambio","routeId":"R07","severity":1,"headwayMultiplier":1.5,"description":"La cooperativa reduce salidas por falta de vehículos","minutesAgo":90,"ttlMin":240,"confirmations":2,"source":"JAC"},
+{"id":"RP-003","type":"bloqueo","routeId":"R06","from":"S11","to":"S07","severity":3,"description":"Vía cerrada por derrumbe (ya despejada)","minutesAgo":200,"ttlMin":120,"confirmations":5,"source":"ciudadano"}]}
