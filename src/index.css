@@ -1,0 +1,8 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+html, body, #root { height: 100%; }
+body { margin: 0; background: #FAF7F2; color: #0F1B2D; font-size: 18px; font-weight: 500; }
+.leaflet-container { background: #EFEBE3; font-family: inherit; }
+.emoji-icon { font-size: 20px; line-height: 1; text-align: center; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+button { -webkit-tap-highlight-color: transparent; }
+button:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
